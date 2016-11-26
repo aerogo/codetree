@@ -1,6 +1,9 @@
 package codetree
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 // CodeTree ...
 type CodeTree struct {
@@ -11,7 +14,7 @@ type CodeTree struct {
 }
 
 // New returns a tree structure if you feed it with indentantion based source code.
-func New(src string) *CodeTree {
+func New(src string) (*CodeTree, error) {
 	ast := new(CodeTree)
 	ast.Indent = -1
 
@@ -55,9 +58,8 @@ func New(src string) *CodeTree {
 					break
 				}
 			}
-
 		} else if node.Indent > block.Indent+2 {
-			panic("Invalid indentation")
+			return nil, errors.New("Invalid indentation")
 		}
 
 		node.Parent = block
@@ -66,5 +68,5 @@ func New(src string) *CodeTree {
 		lastNode = node
 	}
 
-	return ast
+	return ast, nil
 }
