@@ -11,7 +11,10 @@ go get github.com/aerogo/codetree
 ## Usage
 
 ```go
-tree := codetree.New(source)
+tree, err := codetree.New(source)
+
+// Free up resources so that the tree object can be reused in the next compilation
+defer tree.Close()
 ```
 
 ## Input

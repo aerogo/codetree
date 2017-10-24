@@ -3,7 +3,15 @@ package codetree
 import (
 	"errors"
 	"strings"
+	"sync"
 )
+
+// Pool for CodeTree objects
+var pool = sync.Pool{
+	New: func() interface{} {
+		return &CodeTree{}
+	},
+}
 
 // CodeTree ...
 type CodeTree struct {
@@ -13,11 +21,24 @@ type CodeTree struct {
 	Indent   int
 }
 
+// Close sends the tree and all of its children back to the memory pool.
+// The resources are therefore freed up and the tree object should not be
+// used after the final Close() call anymore.
+func (tree *CodeTree) Close() {
+	for _, child := range tree.Children {
+		child.Close()
+	}
+
+	tree.Children = nil
+	pool.Put(tree)
+}
+
 // New returns a tree structure if you feed it with indentantion based source code.
 func New(src string) (*CodeTree, error) {
-	ast := &CodeTree{
-		Indent: -1,
-	}
+	ast := pool.Get().(*CodeTree)
+	ast.Indent = -1
+	ast.Line = ""
+	ast.Parent = nil
 
 	block := ast
 	lastNode := ast
@@ -61,29 +82,28 @@ func New(src string) (*CodeTree, error) {
 			line = line[indent:]
 		}
 
-		node := &CodeTree{
-			Line:   line,
-			Indent: indent,
-		}
-
-		if node.Indent == block.Indent+1 {
+		if indent == block.Indent+1 {
 			// OK
-		} else if node.Indent == block.Indent+2 {
+		} else if indent == block.Indent+2 {
 			block = lastNode
-		} else if node.Indent <= block.Indent {
+		} else if indent <= block.Indent {
 			for {
 				block = block.Parent
-				if block.Indent == node.Indent-1 {
+
+				if block.Indent == indent-1 {
 					break
 				}
 			}
-		} else if node.Indent > block.Indent+2 {
+		} else if indent > block.Indent+2 {
 			return nil, errors.New("Invalid indentation")
 		}
 
+		node := pool.Get().(*CodeTree)
+		node.Line = line
+		node.Indent = indent
 		node.Parent = block
-		block.Children = append(block.Children, node)
 		lastNode = node
+		block.Children = append(block.Children, node)
 	}
 
 	return ast, nil
