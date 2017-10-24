@@ -33,7 +33,16 @@ func New(src string) (*CodeTree, error) {
 		lineStart = i + 1
 
 		// Ignore empty lines
-		if len(strings.TrimSpace(line)) == 0 {
+		empty := true
+
+		for h := 0; h < len(line); h++ {
+			if line[h] != '\t' && line[h] != ' ' {
+				empty = false
+				break
+			}
+		}
+
+		if empty {
 			continue
 		}
 
