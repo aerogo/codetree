@@ -12,8 +12,6 @@ go get github.com/aerogo/codetree
 
 ```go
 tree, err := codetree.New(source)
-
-// Free up resources so that the tree object can be reused in the next compilation
 defer tree.Close()
 ```
 
@@ -34,6 +32,6 @@ parent2
 
 ## Output
 
-See [CodeTree](https://github.com/aerogo/codetree/blob/master/CodeTree.go#L9-L14) structure.
+See [CodeTree](https://github.com/aerogo/codetree/blob/master/CodeTree.go#L17-L22) structure.
 
 The root node always starts with `Indent` being `-1`.
