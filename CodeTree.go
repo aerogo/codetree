@@ -15,15 +15,23 @@ type CodeTree struct {
 
 // New returns a tree structure if you feed it with indentantion based source code.
 func New(src string) (*CodeTree, error) {
-	ast := new(CodeTree)
-	ast.Indent = -1
+	ast := &CodeTree{
+		Indent: -1,
+	}
 
 	block := ast
 	lastNode := ast
+	lineStart := 0
+	src = strings.Replace(src, "\r\n", "\n", -1)
 
-	lines := strings.Split(strings.Replace(src, "\r\n", "\n", -1), "\n")
+	for i := 0; i <= len(src); i++ {
+		if i != len(src) && src[i] != '\n' {
+			continue
+		}
 
-	for _, line := range lines {
+		line := src[lineStart:i]
+		lineStart = i + 1
+
 		// Ignore empty lines
 		if len(strings.TrimSpace(line)) == 0 {
 			continue
@@ -43,9 +51,10 @@ func New(src string) (*CodeTree, error) {
 			line = line[indent:]
 		}
 
-		node := new(CodeTree)
-		node.Line = line
-		node.Indent = indent
+		node := &CodeTree{
+			Line:   line,
+			Indent: indent,
+		}
 
 		if node.Indent == block.Indent+1 {
 			// OK
