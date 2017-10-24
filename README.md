@@ -1,7 +1,21 @@
 # codetree
-Parses indented code (e.g. Pug, Stylus, Python) and returns a tree structure.
+
+Parses indented code (Python, Pug, Stylus, Pixy, Scarlet, etc.) and returns a tree structure.
+
+## Installation
+
+```bash
+go get github.com/aerogo/codetree
+```
+
+## Usage
+
+```go
+tree := codetree.New(source)
+```
 
 ## Input
+
 ```
 parent1
 	child1
@@ -16,4 +30,7 @@ parent2
 ```
 
 ## Output
-See [CodeTree](https://github.com/aerogo/codetree/blob/master/CodeTree.go#L9-L14).
+
+See [CodeTree](https://github.com/aerogo/codetree/blob/master/CodeTree.go#L9-L14) structure.
+
+The root node always starts with `Indent` being `-1`.
