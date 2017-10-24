@@ -48,6 +48,7 @@ func New(src string) (*CodeTree, error) {
 
 		// Indentation
 		indent := 0
+
 		for indent < len(line) {
 			if line[indent] != '\t' {
 				break
@@ -82,7 +83,6 @@ func New(src string) (*CodeTree, error) {
 
 		node.Parent = block
 		block.Children = append(block.Children, node)
-
 		lastNode = node
 	}
 
