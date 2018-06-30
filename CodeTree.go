@@ -2,6 +2,7 @@ package codetree
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -43,12 +44,15 @@ func New(src string) (*CodeTree, error) {
 	block := ast
 	lastNode := ast
 	lineStart := 0
+	lineNumber := 0
 	src = strings.Replace(src, "\r\n", "\n", -1)
 
 	for i := 0; i <= len(src); i++ {
 		if i != len(src) && src[i] != '\n' {
 			continue
 		}
+
+		lineNumber++
 
 		line := src[lineStart:i]
 		lineStart = i + 1
@@ -95,7 +99,7 @@ func New(src string) (*CodeTree, error) {
 				}
 			}
 		} else if indent > block.Indent+2 {
-			return nil, errors.New("Invalid indentation")
+			return nil, errors.New("Invalid indentation at line: " + line + " (" + strconv.Itoa(lineNumber) + ")")
 		}
 
 		node := pool.Get().(*CodeTree)
