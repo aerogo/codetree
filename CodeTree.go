@@ -96,7 +96,7 @@ func New(src string) (*CodeTree, error) {
 			}
 		} else if indent > block.Indent+2 {
 			lineNumber := strings.Count(src[:i], "\n") + 1
-			return nil, fmt.Errorf("Invalid indentation at line: %s (%d)", line, lineNumber)
+			return nil, fmt.Errorf("Invalid indentation on line %d: %s", lineNumber, line)
 		}
 
 		node := pool.Get().(*CodeTree)
