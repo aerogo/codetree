@@ -10,14 +10,25 @@ import (
 )
 
 func TestCodeTree(t *testing.T) {
-	bytes, _ := ioutil.ReadFile("example.txt")
+	bytes, _ := ioutil.ReadFile("test/example.txt")
 	code := string(bytes)
 	tree, err := codetree.New(code)
 
 	assert.NoError(t, err)
+	defer tree.Close()
+
 	assert.Equal(t, -1, tree.Indent)
 	assert.Equal(t, 6, len(tree.Children))
 	assert.Equal(t, "child1", tree.Children[5].Children[0].Line)
+}
+
+func TestBadIndentation(t *testing.T) {
+	bytes, _ := ioutil.ReadFile("test/bad-indentation.txt")
+	code := string(bytes)
+	tree, err := codetree.New(code)
+
+	assert.Nil(t, tree)
+	assert.Error(t, err)
 }
 
 func BenchmarkCodeTree(b *testing.B) {
