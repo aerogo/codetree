@@ -1,8 +1,10 @@
 package codetree
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 )
@@ -14,13 +16,22 @@ var pool = sync.Pool{
 	},
 }
 
+const (
+	RootType = iota
+	LineType
+	CommentType
+)
+
 // CodeTree ...
 type CodeTree struct {
 	Line       string
 	Children   []*CodeTree
 	Parent     *CodeTree
+	Root       *CodeTree
 	Indent     int
 	LineNumber int
+	Filename   string
+	Type       int
 }
 
 // Close sends the tree and all of its children back to the memory pool.
@@ -37,105 +48,8 @@ func (tree *CodeTree) Close() {
 
 // New returns a tree structure if you feed it with indentation based source code.
 func New(src string) (*CodeTree, error) {
-	ast := pool.Get().(*CodeTree)
-	ast.Indent = -1
-	ast.Line = ""
-	ast.Parent = nil
-	ast.LineNumber = 0
-
-	block := ast
-	lastNode := ast
-	lineStart := 0
-	numLines := 0
-	lineNumber := 1
-	src = strings.Replace(src, "\r\n", "\n", -1)
-	srcLen := len(src)
-	comSrcLen := srcLen - 2
-
-	for i := 0; i <= srcLen; i++ {
-
-		line := ""
-		lineNumber += numLines
-
-		// Find multiline comments
-		comOpenEnd := i + 2
-		if i < comSrcLen && src[i:comOpenEnd] == "/*" {
-			comLen := strings.Index(src[comOpenEnd:], "*/")
-			if comLen == -1 {
-				i = srcLen - 1
-			} else {
-				i += comLen + 3
-			}
-			line = src[lineStart : i+1]
-			numLines = strings.Count(line, "\n")
-
-		} else if i != srcLen && src[i] != '\n' { // or skip forward until a full line is found
-			numLines = 0
-			continue
-
-		} else { // line found
-			line = src[lineStart:i]
-			numLines = 1
-		}
-
-		lineStart = i + 1
-
-		// Ignore empty lines
-		empty := true
-		tabs := 0
-		spaces := 0
-		h := 0
-
-	loop:
-		for ; h < len(line); h++ {
-			switch line[h] {
-			case '\t':
-				tabs++
-			case ' ':
-				spaces++
-			default:
-				empty = false
-				break loop
-			}
-		}
-
-		if empty {
-			continue
-		}
-
-		// Indentation
-		indent := tabs + spaces/2
-
-		if h != 0 {
-			line = line[h:]
-		}
-
-		if indent == block.Indent+1 {
-			// OK
-		} else if indent == block.Indent+2 {
-			block = lastNode
-		} else if indent <= block.Indent {
-			for {
-				block = block.Parent
-
-				if block.Indent == indent-1 {
-					break
-				}
-			}
-		} else if indent > block.Indent+2 {
-			return nil, fmt.Errorf("Invalid indentation on line %d: %s", lineNumber, line)
-		}
-
-		node := pool.Get().(*CodeTree)
-		node.Line = line
-		node.Indent = indent
-		node.Parent = block
-		node.LineNumber = lineNumber
-		lastNode = node
-		block.Children = append(block.Children, node)
-	}
-
-	return ast, nil
+	reader := strings.NewReader(src)
+	return FromReader(reader)
 }
 
 const (
@@ -147,31 +61,38 @@ const (
 	multilineCommentEndState
 )
 
-func NewFromReader(src io.Reader) (*CodeTree, error) {
+// FromReader returns a CodeTree, taking an io.Reader as an argument instead of a string.
+// This approach is more idiomatic, versatile and efficient.
+// Uses a finite state machine type pattern to parse src in a single pass.
+func FromReader(src io.Reader) (*CodeTree, error) {
 	ast := pool.Get().(*CodeTree)
 	ast.Indent = -1
 	ast.Line = ""
 	ast.Parent = nil
+	ast.Root = ast
 	ast.LineNumber = 0
+	ast.Filename = ""
+	ast.Type = RootType
 
 	block := ast
 	lastNode := ast
 
 	var (
-		lineNumber int
-		b          byte
-		tabs       int
-		spaces     int
-		state      int
-		err        error
+		b      byte
+		tabs   int
+		spaces int
+		state  int
+		err    error
 	)
 
 	readBytes := 512
-
+	nodeType := LineType
+	lineNumber := 1
+	lastLineNumber := 1
 	line := make([]byte, 0, 128)
 	buf := make([]byte, readBytes)
 
-	endLine := func() error {
+	addNode := func() error {
 		state = lineStartState
 
 		// Ignore empty lines
@@ -202,7 +123,9 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 		node.Line = string(line)
 		node.Indent = indent
 		node.Parent = block
-		node.LineNumber = lineNumber
+		node.Root = ast
+		node.LineNumber = lastLineNumber
+		node.Type = nodeType
 		lastNode = node
 		block.Children = append(block.Children, node)
 
@@ -210,7 +133,28 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 		tabs = 0
 		spaces = 0
 		line = line[:0]
+		nodeType = LineType
+		return nil
+	}
 
+	endLine := func() error {
+		if err = addNode(); err != nil {
+			return err
+		}
+		lastLineNumber = lineNumber
+		return nil
+	}
+
+	beginComment := func() error {
+		indent := 0
+		if len(line) > 0 {
+			indent = tabs + spaces/2 + 1
+		}
+		if err = addNode(); err != nil {
+			return err
+		}
+		tabs += indent
+		nodeType = CommentType
 		return nil
 	}
 
@@ -219,13 +163,12 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 		for i := 0; i < br; i++ {
 			b = buf[i]
 
-			// Match states first, then tokens.
-			// More verbose but, with fewer possible states than possible tokens, optimal.
-			//*
 			if b == '\r' {
 				continue
 			}
 
+			// Match states first, then tokens.
+			// More verbose but, with fewer possible states than possible tokens, optimal.
 			switch state {
 			case lineStartState:
 				switch b {
@@ -242,11 +185,7 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 						return nil, err
 					}
 				case '/':
-					if err = endLine(); err != nil {
-						return nil, err
-					}
 					state = commentStartState
-					line = append(line, b)
 				}
 			case lineState:
 				switch b {
@@ -258,27 +197,30 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 						return nil, err
 					}
 				case '/':
-					if err = endLine(); err != nil {
-						return nil, err
-					}
 					state = commentStartState
-					line = append(line, b)
 				}
 			case commentStartState:
 				switch b {
 				default:
 					state = lineState
 				case '/':
+					if err = beginComment(); err != nil {
+						return nil, err
+					}
 					state = commentLineState
 				case '*':
+					if err = beginComment(); err != nil {
+						return nil, err
+					}
 					state = multilineCommentState
-				case '\n':
+				}
+				line = append(line, '/', b)
+				if b == '\n' {
 					lineNumber++
 					if err = endLine(); err != nil {
 						return nil, err
 					}
 				}
-				line = append(line, b)
 			case commentLineState:
 				switch b {
 				default:
@@ -312,72 +254,6 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 					}
 				}
 			}
-			/*/
-			switch b {
-			case '\r':
-				continue
-			case '\t':
-				switch state {
-				case lineStartState:
-					tabs++
-				default:
-					line = append(line, b)
-				}
-			case ' ':
-				switch state {
-				case lineStartState:
-					spaces++
-				default:
-					line = append(line, b)
-				}
-			default:
-				switch state {
-				case lineStartState, commentStartState:
-					state = lineState
-				case multilineCommentEndState:
-					state = multilineCommentState
-				}
-				line = append(line, b)
-			case '\n':
-				lineNumber++
-				switch state {
-				case lineStartState, lineState, commentLineState, commentStartState:
-					if err := endLine(); err != nil {
-						return nil, err
-					}
-				case multilineCommentState:
-					line = append(line, b)
-				case multilineCommentEndState:
-					state = multilineCommentState
-					line = append(line, b)
-				}
-			case '/':
-				switch state {
-				case lineStartState, lineState:
-					if err := endLine(); err != nil {
-						return nil, err
-					}
-					state = commentStartState
-				case commentStartState:
-					state = commentLineState
-				case multilineCommentEndState:
-					line = append(line, b)
-					if err := endLine(); err != nil {
-						return nil, err
-					}
-					continue
-				}
-				line = append(line, b)
-			case '*':
-				switch state {
-				case commentStartState:
-					state = multilineCommentState
-				case multilineCommentState:
-					state = multilineCommentEndState
-				}
-				line = append(line, b)
-			}
-			//*/
 		}
 		if br < readBytes {
 			break
@@ -386,6 +262,56 @@ func NewFromReader(src io.Reader) (*CodeTree, error) {
 	lineNumber++
 	if err = endLine(); err != nil {
 		return nil, err
+	}
+	return ast, nil
+}
+
+// FromFilelist returns a CodeTree whose every child element is a CodeTree built from the contents of a single file as
+// enumerated in filelist. Each child CodeTree has its Filename element set to the corresponding element in filelist.
+// This structure is parsed properly by Scarlett.
+func FromFilelist(filelist []string) (*CodeTree, error) {
+	ast := pool.Get().(*CodeTree)
+	ast.Indent = -1
+	ast.Line = ""
+	ast.Parent = nil
+	ast.Children = make([]*CodeTree, len(filelist))
+
+	var (
+		wg       sync.WaitGroup
+		errsLock sync.Mutex
+		errs     []string
+	)
+
+	recordError := func(message string) {
+		errsLock.Lock()
+		errs = append(errs, message)
+		errsLock.Unlock()
+		return
+	}
+
+	for i, filename := range filelist {
+		wg.Add(1)
+		go func(i int, filename string) {
+			file, err := os.Open(filename)
+			if err != nil {
+				recordError(fmt.Sprintf("error reading file:%s", err))
+				return
+			}
+			tree, err := FromReader(file)
+			file.Close()
+			if err != nil {
+				recordError(err.Error())
+				return
+			}
+			tree.Filename = filename
+			ast.Children[i] = tree
+			wg.Done()
+		}(i, filename)
+	}
+
+	wg.Wait()
+	if len(errs) != 0 {
+		return nil, errors.New(strings.Join(errs, "\n"))
 	}
 	return ast, nil
 }
