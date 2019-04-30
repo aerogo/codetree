@@ -10,7 +10,7 @@ import (
 )
 
 func TestCodeTree(t *testing.T) {
-	bytes, _ := ioutil.ReadFile("test/example.txt")
+	bytes, _ := ioutil.ReadFile("testdata/example.txt")
 	code := string(bytes)
 	tree, err := codetree.New(code)
 
@@ -23,7 +23,7 @@ func TestCodeTree(t *testing.T) {
 }
 
 func TestBadIndentation(t *testing.T) {
-	bytes, _ := ioutil.ReadFile("test/bad-indentation.txt")
+	bytes, _ := ioutil.ReadFile("testdata/bad-indentation.txt")
 	code := string(bytes)
 	tree, err := codetree.New(code)
 
