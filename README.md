@@ -1,12 +1,12 @@
 # codetree
 
-[![Godoc reference][godoc-image]][godoc-url]
-[![Go report card][goreportcard-image]][goreportcard-url]
-[![Tests][travis-image]][travis-url]
-[![Code coverage][codecov-image]][codecov-url]
+[![Reference][godoc-image]][godoc-url]
+[![Report][report-image]][report-url]
+[![Tests][tests-image]][tests-url]
+[![Coverage][codecov-image]][codecov-url]
 [![License][license-image]][license-url]
 
-Parses indented code (Python, Pug, Stylus, Pixy, Scarlet, etc.) and returns a tree structure.
+Parses indented code (Python, Pug, Stylus, Pixy, codetree, etc.) and returns a tree structure.
 
 ## Installation
 
@@ -50,11 +50,11 @@ The root node always starts with `Indent` being `-1`.
 
 [godoc-image]: https://godoc.org/github.com/aerogo/codetree?status.svg
 [godoc-url]: https://godoc.org/github.com/aerogo/codetree
-[goreportcard-image]: https://goreportcard.com/badge/github.com/aerogo/codetree
-[goreportcard-url]: https://goreportcard.com/report/github.com/aerogo/codetree
-[travis-image]: https://travis-ci.org/aerogo/codetree.svg?branch=master
-[travis-url]: https://travis-ci.org/aerogo/codetree
-[codecov-image]: https://codecov.io/gh/aerogo/codetree/branch/master/graph/badge.svg
+[report-image]: https://goreportcard.com/badge/github.com/aerogo/codetree
+[report-url]: https://goreportcard.com/report/github.com/aerogo/codetree
+[tests-image]: https://cloud.drone.io/api/badges/aerogo/codetree/status.svg
+[tests-url]: https://cloud.drone.io/aerogo/codetree
+[codecov-image]: https://codecov.io/gh/aerogo/codetree/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/aerogo/codetree
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-url]: https://github.com/aerogo/codetree/blob/master/LICENSE
