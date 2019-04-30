@@ -39,7 +39,12 @@ func BenchmarkCodeTree(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		tree, _ := codetree.New(code)
+		tree, err := codetree.New(code)
+
+		if err != nil {
+			b.Fail()
+		}
+
 		tree.Close()
 	}
 }

@@ -43,14 +43,22 @@ func New(src string) (*CodeTree, error) {
 	block := ast
 	lastNode := ast
 	lineStart := 0
-	src = strings.Replace(src, "\r\n", "\n", -1)
 
 	for i := 0; i <= len(src); i++ {
 		if i != len(src) && src[i] != '\n' {
 			continue
 		}
 
-		line := src[lineStart:i]
+		var line string
+
+		if i > 0 && src[i-1] == '\r' {
+			// Windows line endings
+			line = src[lineStart : i-1]
+		} else {
+			// Unix line endings
+			line = src[lineStart:i]
+		}
+
 		lineStart = i + 1
 
 		// Ignore empty lines
