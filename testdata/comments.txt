@@ -30,3 +30,19 @@ parent5
 
 parent6
 	child1
+
+// Parent Seven
+parent7
+	// A child
+	child1
+	child2 // Another child
+  child3 /* Another child */
+  child4 /*
+	child5
+	child6
+	/*
+	child7
+	*/
+
+/*parent8
+	child1*/
