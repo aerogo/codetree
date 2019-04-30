@@ -46,6 +46,39 @@ func (tree *CodeTree) Close() {
 	pool.Put(tree)
 }
 
+// String returns a string describing this node which can be used in error messages.
+func (tree *CodeTree) String() string {
+	s := tree.GetFilename()
+	if s != "" {
+		s = fmt.Sprintf("in file %s ", s)
+	}
+	if tree.LineNumber != 0 {
+		s = fmt.Sprintf("%son line %d ", s, tree.LineNumber)
+	}
+	switch tree.Type {
+	case RootType:
+		s = fmt.Sprintf("%s[root]", s)
+	case LineType:
+		s = fmt.Sprintf("%s[line]", s)
+	case CommentType:
+		s = fmt.Sprintf("%s[comment]", s)
+	}
+	if tree.Line != "" {
+		s = fmt.Sprintf("%s: %s", s, tree.Line)
+	}
+	return s
+}
+
+func (tree *CodeTree) GetFilename() string {
+	if tree.Filename != "" {
+		return tree.Filename
+	}
+	if tree.Root != nil {
+		return tree.Root.Filename
+	}
+	return ""
+}
+
 // New returns a tree structure if you feed it with indentation based source code.
 func New(src string) (*CodeTree, error) {
 	reader := strings.NewReader(src)
