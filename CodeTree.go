@@ -1,7 +1,6 @@
 package codetree
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"sync"
@@ -133,8 +132,7 @@ func New(reader io.Reader) (*CodeTree, error) {
 					}
 				}
 			} else if indent > block.Indent+2 {
-				lineNumber := bytes.Count(buffer[:i], []byte("\n")) + 1
-				return nil, fmt.Errorf("Invalid indentation on line %d: %s", lineNumber, line)
+				return nil, fmt.Errorf("Invalid indentation on line: %s", line)
 			}
 
 			node := codeTreePool.Get().(*CodeTree)
