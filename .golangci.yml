@@ -1,0 +1,7 @@
+issues:
+  exclude-rules:
+    - linters:
+        - staticcheck
+      # Disable "SA6002: argument should be pointer-like to avoid allocations (staticcheck)"
+      # because it triggers on byte slices.
+      text: "SA6002:"
