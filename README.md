@@ -17,7 +17,7 @@ go get github.com/aerogo/codetree
 ## Usage
 
 ```go
-tree, err := codetree.New(source)
+tree, err := codetree.New(reader)
 defer tree.Close()
 ```
 
@@ -38,7 +38,7 @@ parent2
 
 ## Output
 
-See [CodeTree](https://github.com/aerogo/codetree/blob/master/CodeTree.go#L17-L22) structure.
+See [CodeTree](https://github.com/aerogo/codetree/blob/master/CodeTree.go#L25-L30) structure.
 
 The root node always starts with `Indent` being `-1`.
 
