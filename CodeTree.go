@@ -20,7 +20,10 @@ var byteSlicePool = sync.Pool{
 	},
 }
 
-// CodeTree ...
+// CodeTree represents a tree structure for whitespace-significant, indented code.
+// Each line of code is parsed and the indentation level of the line is stored in Indent.
+// The root node having Indent set to -1 contains child nodes that can contain child nodes themselves, recursively.
+// Each line is saved without whitespace characters at the start of the string.
 type CodeTree struct {
 	Line     string
 	Children []*CodeTree
