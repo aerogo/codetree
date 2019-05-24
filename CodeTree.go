@@ -68,7 +68,8 @@ func New(reader io.Reader) (*CodeTree, error) {
 			eof = true
 			err = nil
 
-			buffer = append(remains, pooledBuffer[:n]...)
+			buffer = remains
+			buffer = append(buffer, pooledBuffer[:n]...)
 			buffer = append(buffer, '\n')
 			n = len(buffer)
 			remains = nil
@@ -122,11 +123,14 @@ func New(reader io.Reader) (*CodeTree, error) {
 				line = line[indent:]
 			}
 
-			if indent == block.Indent+1 {
+			switch {
+			case indent == block.Indent+1:
 				// OK
-			} else if indent == block.Indent+2 {
+
+			case indent == block.Indent+2:
 				block = lastNode
-			} else if indent <= block.Indent {
+
+			case indent <= block.Indent:
 				for {
 					block = block.Parent
 
@@ -134,7 +138,8 @@ func New(reader io.Reader) (*CodeTree, error) {
 						break
 					}
 				}
-			} else if indent > block.Indent+2 {
+
+			case indent > block.Indent+2:
 				return nil, fmt.Errorf("Invalid indentation on line: %s", line)
 			}
 
