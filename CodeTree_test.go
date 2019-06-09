@@ -8,9 +8,8 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/aerogo/codetree"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCodeTree(t *testing.T) {

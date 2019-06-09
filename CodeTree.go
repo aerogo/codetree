@@ -67,7 +67,6 @@ func New(reader io.Reader) (*CodeTree, error) {
 		if err == io.EOF {
 			eof = true
 			err = nil
-
 			buffer = remains
 			buffer = append(buffer, pooledBuffer[:n]...)
 			buffer = append(buffer, '\n')
@@ -77,12 +76,6 @@ func New(reader io.Reader) (*CodeTree, error) {
 
 		for i := 0; i < n; i++ {
 			if buffer[i] != '\n' {
-				continue
-			}
-
-			// Ignore completely empty lines
-			if i == lineStart {
-				lineStart++
 				continue
 			}
 
@@ -97,7 +90,7 @@ func New(reader io.Reader) (*CodeTree, error) {
 
 			if remains != nil {
 				line = append(remains, line...)
-				remains = remains[:0]
+				remains = nil
 			}
 
 			lineStart = i + 1
