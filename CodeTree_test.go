@@ -9,7 +9,7 @@ import (
 	"testing/iotest"
 
 	"github.com/aerogo/codetree"
-	"github.com/stretchr/testify/assert"
+	"github.com/akyoto/assert"
 )
 
 func TestCodeTree(t *testing.T) {
@@ -17,11 +17,11 @@ func TestCodeTree(t *testing.T) {
 	// Incorrect usage of the "unsafe" package can lead to those errors.
 	for i := 0; i < 1000; i++ {
 		file, err := os.Open("testdata/example.txt")
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		defer file.Close()
 
 		tree, err := codetree.New(file)
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		defer tree.Close()
 
 		assert.Equal(t, -1, tree.Indent)
@@ -40,11 +40,11 @@ func TestCodeTree(t *testing.T) {
 
 func TestWindowsLineEndings(t *testing.T) {
 	data, err := ioutil.ReadFile("testdata/example.txt")
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	code := string(data)
 	code = strings.ReplaceAll(code, "\n", "\r\n")
 	tree, err := codetree.New(strings.NewReader(code))
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	defer tree.Close()
 
 	assert.Equal(t, -1, tree.Indent)
@@ -54,21 +54,21 @@ func TestWindowsLineEndings(t *testing.T) {
 
 func TestBadIndentation(t *testing.T) {
 	file, err := os.Open("testdata/bad-indentation.txt")
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	defer file.Close()
 
 	tree, err := codetree.New(file)
 	assert.Nil(t, tree)
-	assert.Error(t, err)
+	assert.NotNil(t, err)
 }
 
 func TestLongExample(t *testing.T) {
 	file, err := os.Open("testdata/long-example.txt")
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	defer file.Close()
 
 	tree, err := codetree.New(file)
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	defer tree.Close()
 
 	assert.Equal(t, -1, tree.Indent)
@@ -83,12 +83,12 @@ func TestLongExample(t *testing.T) {
 
 func TestTimeoutReader(t *testing.T) {
 	file, err := os.Open("testdata/example.txt")
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	defer file.Close()
 	timeoutReader := iotest.TimeoutReader(file)
 
 	tree, err := codetree.New(timeoutReader)
-	assert.Error(t, err)
+	assert.NotNil(t, err)
 	assert.Nil(t, tree)
 }
 
